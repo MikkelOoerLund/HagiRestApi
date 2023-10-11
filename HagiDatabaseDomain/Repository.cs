@@ -14,6 +14,11 @@ namespace HagiDatabaseDomain
             DbSet = dbContext.Set<TEntity>();
         }
 
+        ~Repository()
+        {
+            Dispose();
+        }
+
         public TEntity Get(int id)
         {
             return DbSet.Find(id);
