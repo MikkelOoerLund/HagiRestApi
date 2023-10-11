@@ -2,6 +2,8 @@ using HagiDatabaseDomain;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 
 class Program
 {
@@ -13,11 +15,16 @@ class Program
         var serviceCollection = builder.Services;
 
 
-        serviceCollection.AddControllers();
+        serviceCollection
+            .AddControllers()
+            .AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+            });
 
         serviceCollection.AddDbContext<UserContext>();
         serviceCollection.AddTransient<UserRepository>();
-
+        serviceCollection.AddSingleton<UserConverter>();
 
         var app = builder.Build();
 

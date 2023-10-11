@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
     <PackageReference Include="microsoft.entityframeworkcore" Version="7.0.12" />
     <PackageReference Include="microsoft.entityframeworkcore.sqlserver" Version="7.0.12" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

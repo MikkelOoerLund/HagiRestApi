@@ -9,13 +9,14 @@ using HagiDomain;
 class Program
 {
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var httpClient = new HttpClient();
         var userHttpClient = new UserHttpClient(httpClient);
 
-        var userWithId = userHttpClient.GetUserWithId(3);
+        var userWithId = await userHttpClient.GetUserWithId(2);
+        var users = await userHttpClient.GetUsers();
 
-
+        Console.ReadKey();
     }
 }

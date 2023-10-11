@@ -1,14 +1,9 @@
 ﻿using HagiDatabaseDomain;
+using System;
 using System.Text.Json;
 
 namespace HagiDomain
 {
-    //public interface ISerializer
-    //{
-    //    public string SerializeObject<T>(T @object);
-    //    public T DeserializeObject<T>(T @object);
-    //}
-
     public class UserHttpClient : IDisposable
     {
         private readonly string _baseUrl;
@@ -16,7 +11,7 @@ namespace HagiDomain
 
         public UserHttpClient(HttpClient httpClient)
         {
-            _baseUrl = "https://localhost:7066/User";
+            _baseUrl = "https://localhost:7066/User/";
             _httpClient = httpClient;
         }
 
@@ -24,6 +19,20 @@ namespace HagiDomain
         {
             Dispose();
         }
+
+        public async Task<List<User>> GetUsers()
+        {
+            var httpResponseMessage = await _httpClient.GetAsync(_baseUrl);
+
+            if (httpResponseMessage.IsSuccessStatusCode)
+            {
+                var response = await httpResponseMessage.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<User>>(response);
+            }
+
+            throw new Exception();
+        }
+
 
         public async Task<User> GetUserWithId(int id)
         {
@@ -38,6 +47,13 @@ namespace HagiDomain
 
             throw new Exception();
         }
+
+        //public async Task<User> CreateUser(string userName, string password)
+        //{
+
+        //}
+
+
 
 
         public void Dispose()

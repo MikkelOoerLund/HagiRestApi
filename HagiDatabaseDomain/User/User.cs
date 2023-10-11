@@ -7,12 +7,23 @@
         public string Password { get; set; }
     }
 
+    public class UserLoginDTO
+    {
+        public string UserName { get; set; }
+        public string Password { get; set; }
+    }
 
-    //public class UserFactory
-    //{
-    //    public void CreateFromDataTransferObject(UserDTO user)
-    //    {
+    public class UserConverter
+    {
 
-    //    }
-    //}
+
+        public User ConvertUserLoginToUser(UserLoginDTO userLogin)
+        {
+            return new User()
+            {
+                UserName = userLogin.UserName,
+                Password = userLogin.Password,
+            };
+        }
+    }
 }

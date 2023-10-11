@@ -9,10 +9,12 @@ namespace HagiRestApi.Controllers
     [Route("[controller]")]
     public class UserController : Controller
     {
+        private UserConverter _userConverter;
         private UserRepository _userRepository;
 
-        public UserController(UserRepository userRepository)
+        public UserController(UserRepository userRepository, UserConverter userConverter)
         {
+            _userConverter = userConverter;
             _userRepository = userRepository;
         }
 
@@ -37,58 +39,44 @@ namespace HagiRestApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser()
+        public async Task<IActionResult> CreateUser([FromBody] UserLoginDTO userLogin)
         {
-            var user = await ReadUserFromStream();
-         
-            if (user == null)
+            if (userLogin == null)
             {
                 return BadRequest("The request body cannot be null.");
             }
 
-            user.UserId = 0;
 
+            var user = _userConverter.ConvertUserLoginToUser(userLogin);
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-
 
             var routeValues = new { id = user.UserId };
             return CreatedAtRoute("GetUser", routeValues, user);
         }
 
-        private async Task<User> ReadUserFromStream()
-        {
-            string requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
-            return JsonConvert.DeserializeObject<User>(requestBody);
-        }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserLoginDTO userLogin)
         {
-            var user = await ReadUserFromStream();
-
-
-            if (user == null)
+            if (userLogin == null)
             {
                 return BadRequest("User cannot be null.");
             }
 
-            var userId = user.UserId;
+            var user = _userConverter.ConvertUserLoginToUser(userLogin);
 
-            if (userId != id)
-            {
-                return BadRequest($"User with UserId: {userId}, dosent match the given id: {id}");
-            }
+            var existingUser = await _userRepository.GetAsync(id);
 
-            var existingPokemonSpecies = await _userRepository.GetAsync(id);
-
-            if (existingPokemonSpecies == null)
+            if (existingUser == null)
             {
                 return NotFound();
             }
 
-            _userRepository.SetValues(existingPokemonSpecies, user);
+            user.UserId = id;
+
+            _userRepository.SetValues(existingUser, user);
             await _userRepository.SaveChangesAsync();
 
             return Ok(user);
@@ -97,14 +85,14 @@ namespace HagiRestApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePokemonSpecies(int id)
         {
-            var pokemonSpeciesToDelete = await _userRepository.GetAsync(id);
+            var userToDelete = await _userRepository.GetAsync(id);
 
-            if (pokemonSpeciesToDelete == null)
+            if (userToDelete == null)
             {
                 return NotFound();
             }
 
-            _userRepository.Remove(pokemonSpeciesToDelete);
+            _userRepository.Remove(userToDelete);
             await _userRepository.SaveChangesAsync();
 
             return NoContent();
