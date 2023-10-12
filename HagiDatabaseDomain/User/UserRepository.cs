@@ -13,7 +13,10 @@ namespace HagiDatabaseDomain
         {
         }
 
-
+        public async Task<User> GetUserWithName(string name)
+        {
+            return await DbSet.FirstOrDefaultAsync(x => x.UserName == name);
+        }
 
 
 

@@ -25,8 +25,8 @@ namespace HagiRestApi.Controllers
             return Ok(users);
         }
 
-        [HttpGet("{id}", Name = "GetUser")]
-        public async Task<IActionResult> GetUser(int id)
+        [HttpGet("{id:int}", Name = "GetUserWithId")]
+        public async Task<IActionResult> GetUserWithId(int id)
         {
             var user = await _userRepository.GetAsync(id);
 
@@ -38,11 +38,21 @@ namespace HagiRestApi.Controllers
             return Ok(user);
         }
 
-        [HttpGet("{name}")]
-        public async Task<IActionResult> GetUser(string name)
+        [HttpGet("{name:alpha}", Name = "GetUserWithName")]
+        public async Task<IActionResult> GetUserWithName(string name)
         {
+            var userWithName = await _userRepository.GetUserWithName(name);
 
+            if (userWithName == null)
+            {
+                return NotFound();
+            }
+
+
+            return Ok(userWithName);
         }
+
+
 
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] UserAuthenticationDTO userLogin)
@@ -59,7 +69,7 @@ namespace HagiRestApi.Controllers
             await _userRepository.SaveChangesAsync();
 
             var routeValues = new { id = user.UserId };
-            return CreatedAtRoute("GetUser", routeValues, user);
+            return CreatedAtRoute("GetUserWithId", routeValues, user);
         }
 
 

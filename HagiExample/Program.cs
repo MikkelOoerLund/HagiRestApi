@@ -10,9 +10,9 @@ using System.Collections.Generic;
 class Program
 {
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        UserHttpClientExample();
+        await UserHttpClientExample();
         Console.ReadLine();
     }
 
@@ -52,21 +52,31 @@ class Program
         // Create user example
 
         var dateTime = DateTime.Now;
+        var dateTimeString = dateTime.ToString();
         var userLogin = new UserAuthenticationDTO()
         {
-            UserName = "Hegne: " + dateTime.ToString(),
-            HashPassword = "Firkant: " + dateTime.ToString(),
+            Salt = "Salt: ",
+            UserName = "Hegne",
+            HashPassword = "Firkant",
         };
 
 
-        var createdUser = await userHttpClient.CreateUserFromUserLogin(userLogin);
-        await Console.Out.WriteLineAsync($"Created user: {createdUser}");
+        var createdUser = await userHttpClient.CreateUserFromUserLoginAsync(userLogin);
+        await Console.Out.WriteLineAsync($"Created user:");
         await Console.Out.WriteLineAsync($" - {createdUser}");
+        await Console.Out.WriteLineAsync();
+
+        // Get user with name example
+
+        var userWithName = await userHttpClient.GetUserWithNameAsync(createdUser.UserName);
+
+        await Console.Out.WriteLineAsync($"Got user with name:");
+        await Console.Out.WriteLineAsync($" - {userWithName}");
         await Console.Out.WriteLineAsync();
 
 
         // Get user with id example
-        var userWithId = await userHttpClient.GetUserWithId(createdUser.UserId);
+        var userWithId = await userHttpClient.GetUserWithIdAsync(createdUser.UserId);
 
         await Console.Out.WriteLineAsync($"Got user with id:");
         await Console.Out.WriteLineAsync($" - {userWithId}");
@@ -74,7 +84,7 @@ class Program
 
 
         // Get all users example
-        var users = await userHttpClient.GetUsers();
+        var users = await userHttpClient.GetUsersAsync();
 
         await Console.Out.WriteLineAsync("All users:");
 
@@ -93,11 +103,13 @@ class Program
 
 
 
+
+
         // Update user example
         var updatedUser = await userHttpClient.UpdateUser(createdUser.UserId, userLogin);
 
 
-        await Console.Out.WriteLineAsync($"Updated user: {updatedUser}");
+        await Console.Out.WriteLineAsync($"Updated user: ");
         await Console.Out.WriteLineAsync($" - {updatedUser}");
         await Console.Out.WriteLineAsync();
 
@@ -114,7 +126,7 @@ class Program
         // View updated collection
         await Console.Out.WriteLineAsync("All users:");
 
-        var updatedUsers = await userHttpClient.GetUsers();
+        var updatedUsers = await userHttpClient.GetUsersAsync();
 
         foreach (var user in updatedUsers)
         {

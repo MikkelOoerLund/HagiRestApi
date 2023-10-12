@@ -6,6 +6,7 @@ using System.Text.Json;
 
 namespace HagiDomain
 {
+    // Note: Refactor
     public class UserHttpClient : IDisposable
     {
         private readonly string _baseUrl;
@@ -23,21 +24,28 @@ namespace HagiDomain
             Dispose();
         }
 
-        public async Task<List<User>> GetUsers()
+        public async Task<List<User>> GetUsersAsync()
         {
             var httpResponseMessage = await _httpClient.GetAsync(_baseUrl);
             return await DeserializeResponse<List<User>>(httpResponseMessage);
         }
 
+        public async Task<User> GetUserWithNameAsync(string name)
+        {
+            var url = _baseUrl + name;
+            var httpResponseMessage = await _httpClient.GetAsync(url);
+            return await DeserializeResponse<User>(httpResponseMessage);
+        }
 
-        public async Task<User> GetUserWithId(int userId)
+
+        public async Task<User> GetUserWithIdAsync(int userId)
         {
             var url = _baseUrl + userId;
             var httpResponseMessage = await _httpClient.GetAsync(url);
             return await DeserializeResponse<User>(httpResponseMessage);
         }
 
-        public async Task<User> CreateUserFromUserLogin(UserAuthenticationDTO userLogin)
+        public async Task<User> CreateUserFromUserLoginAsync(UserAuthenticationDTO userLogin)
         {
             var stringContent = CreateJsonStringObject(userLogin);
             var httpResponseMessage = await _httpClient.PostAsync(_baseUrl, stringContent);
