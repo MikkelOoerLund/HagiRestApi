@@ -5,11 +5,44 @@
 
 using HagiDatabaseDomain;
 using HagiDomain;
+using System.Collections.Generic;
 
 class Program
 {
 
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
+    {
+        UserHttpClientExample();
+        Console.ReadLine();
+    }
+
+    private void BCryptExample()
+    {
+        var password = "Hegne";
+        var saltCount = 20;
+        var hashIterationFactor = 14;
+
+
+        var salt = BCrypto.GenerateSalt(saltCount);
+        var saltWithPassword = salt + password;
+
+
+        string passwordHash = BCrypto.HashPassword(saltWithPassword, hashIterationFactor);
+
+
+        var isValid = BCrypto.Verify(saltWithPassword, passwordHash);
+
+
+        Console.WriteLine(salt);
+        Console.WriteLine(passwordHash);
+
+        Console.WriteLine(isValid);
+
+
+        Console.ReadKey();
+    }
+
+    private static async Task UserHttpClientExample()
     {
 
         // Initialize example
@@ -92,7 +125,5 @@ class Program
         {
             await Console.Out.WriteLineAsync(" - No users found");
         }
-
-        Console.ReadKey();
     }
 }

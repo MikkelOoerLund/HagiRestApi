@@ -6,8 +6,8 @@
         {
             return new User()
             {
-                UserName = userLogin.UserName,
-                Password = userLogin.Password,
+                Hash = userLogin.UserName,
+                Salt = userLogin.Password,
             };
         }
     }

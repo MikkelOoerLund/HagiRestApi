@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Core" Version="1.6.0" />
     <PackageReference Include="microsoft.entityframeworkcore" Version="7.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.12">
       <PrivateAssets>all</PrivateAssets>
@@ -18,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HagiDatabaseDomain\HagiDatabaseDomain.csproj" />
+	  <Using Include="BCrypt.Net.BCrypt" Alias="BCrypto"/>
+
   </ItemGroup>
 
 </Project>
