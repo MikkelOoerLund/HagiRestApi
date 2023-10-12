@@ -2,12 +2,12 @@
 {
     public class UserConverter
     {
-        public User ConvertUserLoginToUser(UserLoginDTO userLogin)
+        public User ConvertUserLoginToUser(UserAuthenticationDTO userLogin)
         {
             return new User()
             {
                 UserName = userLogin.UserName,
-                Password = userLogin.Password,
+                HashPassword = userLogin.HashPassword,
             };
         }
     }

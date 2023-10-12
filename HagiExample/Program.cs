@@ -52,10 +52,10 @@ class Program
         // Create user example
 
         var dateTime = DateTime.Now;
-        var userLogin = new UserLoginDTO()
+        var userLogin = new UserAuthenticationDTO()
         {
             UserName = "Hegne: " + dateTime.ToString(),
-            Password = "Firkant: " + dateTime.ToString(),
+            HashPassword = "Firkant: " + dateTime.ToString(),
         };
 
 

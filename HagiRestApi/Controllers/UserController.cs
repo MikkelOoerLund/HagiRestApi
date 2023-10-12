@@ -21,25 +21,31 @@ namespace HagiRestApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var pokemonSpecies = await _userRepository.GetAllAsync();
-            return Ok(pokemonSpecies);
+            var users = await _userRepository.GetAllAsync();
+            return Ok(users);
         }
 
         [HttpGet("{id}", Name = "GetUser")]
         public async Task<IActionResult> GetUser(int id)
         {
-            var pokemonSpecies = await _userRepository.GetAsync(id);
+            var user = await _userRepository.GetAsync(id);
 
-            if (pokemonSpecies == null)
+            if (user == null)
             {
                 return NotFound();
             }
 
-            return Ok(pokemonSpecies);
+            return Ok(user);
+        }
+
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetUser(string name)
+        {
+
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserLoginDTO userLogin)
+        public async Task<IActionResult> CreateUser([FromBody] UserAuthenticationDTO userLogin)
         {
             if (userLogin == null)
             {
@@ -58,7 +64,7 @@ namespace HagiRestApi.Controllers
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserLoginDTO userLogin)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserAuthenticationDTO userLogin)
         {
             if (userLogin == null)
             {
@@ -83,7 +89,7 @@ namespace HagiRestApi.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePokemonSpecies(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
             var userToDelete = await _userRepository.GetAsync(id);
 
