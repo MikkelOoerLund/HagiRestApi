@@ -10,11 +10,26 @@ using System.Collections.Generic;
 class Program
 {
 
-    public static async Task Main(string[] args)
+    public static async Task Main()
     {
-        await UserHttpClientExample();
+
+        await UserHttpClientExampleAsync();
         Console.ReadLine();
     }
+
+    //public static void Main(string[] args)
+    //{
+    //    var password = "hegne";
+    //    var salt = AuthenticationService.GenerateSalt();
+    //    var hash = AuthenticationService.GenerateHashPassword(password, salt);
+    //    var anotherHash = AuthenticationService.GenerateHashPassword(password, salt);
+
+    //    Console.WriteLine(hash);
+    //    Console.WriteLine(anotherHash);
+
+
+    //    Console.ReadLine();
+    //}
 
     private void BCryptExample()
     {
@@ -42,7 +57,7 @@ class Program
         Console.ReadKey();
     }
 
-    private static async Task UserHttpClientExample()
+    private static async Task UserHttpClientExampleAsync()
     {
 
         // Initialize example
@@ -53,15 +68,16 @@ class Program
 
         var dateTime = DateTime.Now;
         var dateTimeString = dateTime.ToString();
-        var userLogin = new UserAuthenticationDTO()
-        {
-            Salt = "Salt: ",
-            UserName = "Hegne",
-            HashPassword = "Firkant",
-        };
+
+        var factory = new UserAuthenticationFactory();
 
 
-        var createdUser = await userHttpClient.CreateUserFromUserLoginAsync(userLogin);
+        var userName = "Hegne";
+        var password = "Firkant";
+
+        var userAuthentication = factory.CreateUserAuthentication(userName, password);
+
+        var createdUser = await userHttpClient.CreateUserFromAuthenticationAsync(userAuthentication);
         await Console.Out.WriteLineAsync($"Created user:");
         await Console.Out.WriteLineAsync($" - {createdUser}");
         await Console.Out.WriteLineAsync();
@@ -106,7 +122,7 @@ class Program
 
 
         // Update user example
-        var updatedUser = await userHttpClient.UpdateUser(createdUser.UserId, userLogin);
+        var updatedUser = await userHttpClient.UpdateUser(createdUser.UserId, userAuthentication);
 
 
         await Console.Out.WriteLineAsync($"Updated user: ");

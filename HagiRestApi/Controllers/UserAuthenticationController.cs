@@ -11,7 +11,7 @@ namespace HagiRestApi.Controllers
 
         public UserAuthenticationController(UserRepository userRepository)
         {
-
+            _userRepository = userRepository;
         }
 
 

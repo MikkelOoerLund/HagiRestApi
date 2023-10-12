@@ -45,7 +45,7 @@ namespace HagiDomain
             return await DeserializeResponse<User>(httpResponseMessage);
         }
 
-        public async Task<User> CreateUserFromUserLoginAsync(UserAuthenticationDTO userLogin)
+        public async Task<User> CreateUserFromAuthenticationAsync(UserAuthenticationDTO userLogin)
         {
             var stringContent = CreateJsonStringObject(userLogin);
             var httpResponseMessage = await _httpClient.PostAsync(_baseUrl, stringContent);

@@ -11,7 +11,6 @@ namespace HagiDatabaseDomain
     {
         public DbSet<User> Users { get; set; }
 
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var builder = new SqlConnectionStringBuilder

@@ -55,15 +55,22 @@ namespace HagiRestApi.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserAuthenticationDTO userLogin)
+        public async Task<IActionResult> CreateUser([FromBody] UserAuthenticationDTO userAuthentication)
         {
-            if (userLogin == null)
+            if (userAuthentication == null)
             {
                 return BadRequest("The request body cannot be null.");
             }
 
+            var existingUser = await _userRepository.GetUserWithName(userAuthentication.UserName);
 
-            var user = _userConverter.ConvertUserLoginToUser(userLogin);
+            if (existingUser != null)
+            {
+                return BadRequest($"User with UserName: {userAuthentication.UserName} already exists");
+            }
+
+
+            var user = _userConverter.ConvertUserLoginToUser(userAuthentication);
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
