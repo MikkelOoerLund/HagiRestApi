@@ -41,7 +41,7 @@ namespace HagiRestApi.Controllers
         [HttpGet("{name:alpha}", Name = "GetUserWithName")]
         public async Task<IActionResult> GetUserWithName(string name)
         {
-            var userWithName = await _userRepository.GetUserWithName(name);
+            var userWithName = await _userRepository.GetUserWithNameAsync(name);
 
             if (userWithName == null)
             {
@@ -62,7 +62,7 @@ namespace HagiRestApi.Controllers
                 return BadRequest("The request body cannot be null.");
             }
 
-            var existingUser = await _userRepository.GetUserWithName(userAuthentication.UserName);
+            var existingUser = await _userRepository.GetUserWithNameAsync(userAuthentication.UserName);
 
             if (existingUser != null)
             {
@@ -70,7 +70,7 @@ namespace HagiRestApi.Controllers
             }
 
 
-            var user = _userConverter.ConvertUserLoginToUser(userAuthentication);
+            var user = _userConverter.ConvertToUser(userAuthentication);
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
@@ -88,7 +88,7 @@ namespace HagiRestApi.Controllers
                 return BadRequest("User cannot be null.");
             }
 
-            var user = _userConverter.ConvertUserLoginToUser(userLogin);
+            var user = _userConverter.ConvertToUser(userLogin);
 
             var existingUser = await _userRepository.GetAsync(id);
 

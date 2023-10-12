@@ -1,9 +1,14 @@
 using HagiDatabaseDomain;
+using HagiRestApi.Controllers;
+using HagiRestApi.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Serialization;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 class Program
 {
@@ -13,7 +18,10 @@ class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var serviceCollection = builder.Services;
+        var configurations = builder.Configuration;
 
+        var settings = new Settings();
+        configurations.Bind("Settings", settings);
 
         serviceCollection
             .AddControllers()
@@ -24,7 +32,28 @@ class Program
 
         serviceCollection.AddDbContext<UserContext>();
         serviceCollection.AddTransient<UserRepository>();
-        serviceCollection.AddSingleton<UserConverter>();
+
+
+        var authenticationScheme = JwtBearerDefaults.AuthenticationScheme;
+
+        var securityKey = settings.BearerKey;
+        var encodedSequrityKey = Encoding.ASCII.GetBytes(securityKey);
+        var issuerSigningKey = new SymmetricSecurityKey(encodedSequrityKey);
+
+
+        //serviceCollection.AddAuthentication(authenticationScheme)
+        //    .AddJwtBearer(options =>
+        //    {
+        //        options.TokenValidationParameters = new TokenValidationParameters()
+        //        {
+        //            IssuerSigningKey = new SymmetricSecurityKey(issuerSigningKey)
+        //        };
+        //    });
+
+        serviceCollection.AddSingleton<UserConverter>()
+            .AddSingleton<JsonWebTokenFactory>()
+            .AddSingleton<Settings>(settings);
+        
 
         var app = builder.Build();
 

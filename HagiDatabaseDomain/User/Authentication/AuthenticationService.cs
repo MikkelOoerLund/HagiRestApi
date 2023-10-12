@@ -2,16 +2,6 @@
 
 namespace HagiDatabaseDomain
 {
-    //public static class Assert
-    //{
-    //    public static void AssertValueInRange(int value, int minValue, int maxValue)
-    //    {
-    //        if (value < minValue) throw new Exception($"Value: {value} can not be less then MinValue: {minValue}");
-    //        if (value > maxValue) throw new Exception($"Value: {value} can not be less then MinValue: {minValue}");
-    //    }
-
-    //}
-
     public static class AuthenticationService
     {
         private const int SALT_SIZE = 32;

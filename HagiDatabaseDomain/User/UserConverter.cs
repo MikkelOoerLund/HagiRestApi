@@ -2,7 +2,7 @@
 {
     public class UserConverter
     {
-        public User ConvertUserLoginToUser(UserAuthenticationDTO userAuthentication)
+        public User ConvertToUser(UserAuthenticationDTO userAuthentication)
         {
             return new User()
             {
