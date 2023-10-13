@@ -9,6 +9,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Newtonsoft.Json;
 
 class Program
 {
@@ -20,14 +21,17 @@ class Program
         var serviceCollection = builder.Services;
         var configurations = builder.Configuration;
 
-        var settings = new Settings();
-        configurations.Bind("Settings", settings);
+        var jsonWebTokenConfiguration = new JsonWebTokenConfiguration();
+        configurations.Bind("JsonWebTokenConfiguration", jsonWebTokenConfiguration);
+
 
         serviceCollection
             .AddControllers()
             .AddNewtonsoftJson(options =>
             {
-                options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                var serializerSettings = options.SerializerSettings;
+                serializerSettings.ContractResolver = new DefaultContractResolver();
+                serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             });
 
         serviceCollection.AddDbContext<UserContext>();
@@ -36,25 +40,29 @@ class Program
 
         var authenticationScheme = JwtBearerDefaults.AuthenticationScheme;
 
-        var securityKey = settings.BearerKey;
-        var encodedSequrityKey = Encoding.ASCII.GetBytes(securityKey);
-        var issuerSigningKey = new SymmetricSecurityKey(encodedSequrityKey);
+        var securityKey = jsonWebTokenConfiguration.Key;
+        var secutiryKeyBytes = Encoding.ASCII.GetBytes(securityKey);
 
 
-        //serviceCollection.AddAuthentication(authenticationScheme)
-        //    .AddJwtBearer(options =>
-        //    {
-        //        options.TokenValidationParameters = new TokenValidationParameters()
-        //        {
-        //            IssuerSigningKey = new SymmetricSecurityKey(issuerSigningKey)
-        //        };
-        //    });
+        serviceCollection.AddAuthentication(authenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidIssuer = jsonWebTokenConfiguration.Issuer,
+                    ValidAudience = jsonWebTokenConfiguration.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(secutiryKeyBytes)
+                };
+            });
+
 
         serviceCollection.AddSingleton<UserConverter>()
-            .AddSingleton<JsonWebTokenFactory>()
-            .AddSingleton<Settings>(settings);
+            .AddSingleton<JsonWebTokenConfiguration>(jsonWebTokenConfiguration);
         
-
         var app = builder.Build();
 
         app.UseHttpsRedirection();

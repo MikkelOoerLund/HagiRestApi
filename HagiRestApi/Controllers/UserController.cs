@@ -48,7 +48,6 @@ namespace HagiRestApi.Controllers
                 return NotFound();
             }
 
-
             return Ok(userWithName);
         }
 
@@ -70,7 +69,7 @@ namespace HagiRestApi.Controllers
             }
 
 
-            var user = _userConverter.ConvertToUser(userAuthentication);
+            var user = _userConverter.ConvertFromUserAuthentication(userAuthentication);
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
@@ -88,7 +87,7 @@ namespace HagiRestApi.Controllers
                 return BadRequest("User cannot be null.");
             }
 
-            var user = _userConverter.ConvertToUser(userLogin);
+            var user = _userConverter.ConvertFromUserAuthentication(userLogin);
 
             var existingUser = await _userRepository.GetAsync(id);
 

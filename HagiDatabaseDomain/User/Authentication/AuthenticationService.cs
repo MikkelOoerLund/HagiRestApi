@@ -26,8 +26,5 @@ namespace HagiDatabaseDomain
             var hashBytes = hashFactory.GetBytes(HASH_SIZE);
             return Convert.ToBase64String(hashBytes);
         }
-
-
-
     }
 }
