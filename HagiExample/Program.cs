@@ -13,7 +13,7 @@ class Program
     public static async Task Main()
     {
 
-        await UserHttpClientExampleAsync();
+        await UserAuthorizationExampleAsync();
         Console.ReadLine();
     }
 
@@ -55,6 +55,29 @@ class Program
 
 
         Console.ReadKey();
+    }
+
+
+    private static async Task UserAuthorizationExampleAsync()
+    {
+        var httpClient = new HttpClient();
+        var userHttpClient = new UserHttpClient(httpClient);
+        var userAuthenticationHttpClient = new UserAuthenticationHttpClient(httpClient);
+
+        var userAuthentication = new UserAuthenticationDTO()
+        {
+            Salt = "random_salt_value",
+            UserName = "random_user_name",
+            HashPassword = "random_hash_password"
+}       ;
+
+
+        var user = await userHttpClient.CreateUserFromAuthenticationAsync(userAuthentication);
+        var jsonWebToken = await userAuthenticationHttpClient.LoginUserAsync(userAuthentication);
+
+        var value = await userAuthenticationHttpClient.GetAuthorizedExampleData(jsonWebToken);
+
+        await Console.Out.WriteLineAsync(value);
     }
 
     private static async Task UserHttpClientExampleAsync()

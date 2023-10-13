@@ -9,18 +9,20 @@ using System.Text;
 namespace HagiRestApi.Controllers
 {
     // Note: Refactor
-
     [ApiController]
     [Route("authentication")]
     public class AuthenticationController : Controller
     {
+        private UserConverter _userConverter;
+        private UserRepository _userRepository;
         private JsonWebTokenConfiguration _jsonWebTokenConfiguration;
-        private List<UserAuthenticationDTO> _registeredUsers;
 
-        public AuthenticationController(JsonWebTokenConfiguration jsonWebTokenConfiguration)
+
+        public AuthenticationController(UserConverter userConverter, UserRepository userRepository, JsonWebTokenConfiguration jsonWebTokenConfiguration)
         {
+            _userConverter = userConverter;
+            _userRepository = userRepository;
             _jsonWebTokenConfiguration = jsonWebTokenConfiguration;
-            _registeredUsers = new List<UserAuthenticationDTO>();
         }
 
 
@@ -30,12 +32,11 @@ namespace HagiRestApi.Controllers
             if (userAuthentication.Salt == null) return BadRequest("Salt can not be null");
             if (userAuthentication.UserName == null) return BadRequest("User name can not be null");
             if (userAuthentication.HashPassword == null) return BadRequest("Hash password can not be null");
-
             return Ok();
         }
 
 
-        private string CreateJsonWebTokenFromUserAuthentication(UserAuthenticationDTO userAuthentication)
+        private string CreateJsonWebTokenWithUser(User user)
         {
             var key = _jsonWebTokenConfiguration.Key;
             var subject = _jsonWebTokenConfiguration.Subject;
@@ -50,8 +51,8 @@ namespace HagiRestApi.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, subject),
                 new Claim(JwtRegisteredClaimNames.Jti, guid.ToString()),
                 new Claim(JwtRegisteredClaimNames.Exp, constructedDateTime.ToString()),
-                new Claim("UserId", userAuthentication.UserId.ToString()),
-                new Claim("UserName", userAuthentication.UserName),
+                new Claim("UserId", user.UserId.ToString()),
+                new Claim("UserName", user.UserName),
             };
 
             var keyBytes = Encoding.UTF8.GetBytes(key);
@@ -73,15 +74,28 @@ namespace HagiRestApi.Controllers
         }
 
 
+
         [HttpPost("register")]
-        public IActionResult Register([FromBody] UserAuthenticationDTO userAuthentication)
+        public async Task<IActionResult> Register([FromBody] UserAuthenticationDTO userAuthentication)
         {
             var actionResault = GetActionResaultFromUserAuthentication(userAuthentication);
 
             if (actionResault is OkResult)
             {
-                var jsonWebToken = CreateJsonWebTokenFromUserAuthentication(userAuthentication);
-                _registeredUsers.Add(userAuthentication);
+                var userName = userAuthentication.UserName;
+                var user = await _userRepository.GetUserWithNameAsync(userName);
+
+                if (user != null)
+                {
+                    return BadRequest("Username is taken");
+                }
+
+                user = _userConverter.ConvertFromUserAuthentication(userAuthentication);
+                await _userRepository.AddAsync(user);
+                await _userRepository.SaveChangesAsync();
+
+
+                var jsonWebToken = CreateJsonWebTokenWithUser(user);
                 return Ok(jsonWebToken);
             }
 
@@ -90,17 +104,30 @@ namespace HagiRestApi.Controllers
 
 
         [HttpPost("login")]
-        public IActionResult Login(UserAuthenticationDTO userAuthentication)
+        public async Task<IActionResult> Login([FromBody] UserAuthenticationDTO userAuthentication)
         {
-            var user = _registeredUsers.Find(u => u.UserName == userAuthentication.UserName);
+            var actionResault = GetActionResaultFromUserAuthentication(userAuthentication);
+            var userName = userAuthentication.UserName;
+            var user = await _userRepository.GetUserWithNameAsync(userName);
 
-            if (user != null && user.HashPassword == userAuthentication.HashPassword)
+
+            if (user == null)
             {
-                var jsonWebToken = CreateJsonWebTokenFromUserAuthentication(user);
-                return Ok(jsonWebToken);
+                return BadRequest("Invalid username or password");
             }
 
-            return Unauthorized("Invalid username or password");
+            if (user.HashPassword != userAuthentication.HashPassword)
+            {
+                return BadRequest("Invalid username or password");
+            }
+
+            if (actionResault is BadRequestResult)
+            {
+                return actionResault;
+            }
+
+            var jsonWebToken = CreateJsonWebTokenWithUser(user);
+            return Ok(jsonWebToken);
         }
 
 

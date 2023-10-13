@@ -66,9 +66,10 @@ class Program
         var app = builder.Build();
 
         app.UseHttpsRedirection();
+        app.UseAuthentication();
+        app.UseRouting();
         app.UseAuthorization();
         app.MapControllers();
-        app.UseRouting();
 
         using var scopeServiceProvider = app.Services.CreateScope();
         var serviceProvider = scopeServiceProvider.ServiceProvider;

@@ -7,7 +7,6 @@
             return new User()
             {
                 Salt = userAuthentication.Salt,
-                UserId = userAuthentication.UserId,
                 UserName = userAuthentication.UserName,
                 HashPassword = userAuthentication.HashPassword,
             };
@@ -19,7 +18,6 @@
             return new UserAuthenticationDTO()
             {
                 Salt = user.Salt,
-                UserId = user.UserId,
                 UserName = user.UserName,
                 HashPassword = user.HashPassword,
             };
