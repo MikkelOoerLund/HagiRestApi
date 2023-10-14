@@ -7,6 +7,14 @@ using System.Threading.Tasks;
 
 namespace HagiDatabaseDomain
 {
+    public class UserService
+    {
+        private UserRepository _userRepository;
+
+
+    }
+
+
     public class UserRepository : Repository<User>
     {
         public UserRepository(UserContext userContext) : base(userContext)
@@ -24,6 +32,9 @@ namespace HagiDatabaseDomain
             return await DbSet.AnyAsync(x => x.UserName == name);
         }
 
+
+
+        
 
     }
 }
