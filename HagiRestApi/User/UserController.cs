@@ -1,141 +1,276 @@
 ﻿using AutoMapper;
 using HagiDatabaseDomain;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 
 namespace HagiRestApi.Controllers
 {
+
+
+    public class GetAllUsersRequest : IRequest<List<User>>
+    {
+    }
+
+
+    public class GetAllUsersRequestHandler : IRequestHandler<GetAllUsersRequest, List<User>>
+    {
+        private readonly UserRepository _userRepository;
+
+        public GetAllUsersRequestHandler(UserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
+        public async Task<List<User>> Handle(GetAllUsersRequest request, CancellationToken cancellationToken)
+        {
+            var users = await _userRepository.GetAllAsync();
+            return users;
+        }
+    }
+
+    public class GetUserWithIdRequest : IRequest<User>
+    {
+        public int UserId { get; set; }
+    }
+
+    public class GetUserWithIdRequestHandler : IRequestHandler<GetUserWithIdRequest, User>
+    {
+        private readonly UserRepository _userRepository;
+
+        public GetUserWithIdRequestHandler(UserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
+        public async Task<User> Handle(GetUserWithIdRequest request, CancellationToken cancellationToken)
+        {
+            var userId = request.UserId;
+
+            var user = await _userRepository.GetAsync(userId);
+            return user;
+        }
+    }
+
+
+    public class GetUserWithNameRequest : IRequest<User>
+    {
+        public string UserName { get; set; }
+    }
+
+
+    public class GetUserWithNameRequestHandler : IRequestHandler<GetUserWithNameRequest, User>
+    {
+        private readonly UserRepository _userRepository;
+
+        public GetUserWithNameRequestHandler(UserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
+        public async Task<User> Handle(GetUserWithNameRequest request, CancellationToken cancellationToken)
+        {
+            var userName = request.UserName;
+            var user = await _userRepository.GetUserWithNameAsync(userName);
+            return user;
+        }
+    }
+
+
+    public class CreateUserRequest : IRequest<User>
+    {
+        public UserAuthenticationDTO UserAuthenticationDTO { get; set; }
+    }
+
+
+    public class CreateUserRequestHandler : IRequestHandler<CreateUserRequest, User>
+    {
+        private readonly IMapper _mapper;
+        private readonly UserRepository _userRepository;
+
+        public CreateUserRequestHandler(IMapper mapper, UserRepository userRepository)
+        {
+            _mapper = mapper;
+            _userRepository = userRepository;
+        }
+
+        public async Task<User> Handle(CreateUserRequest request, CancellationToken cancellationToken)
+        {
+            var userAuthentication = request.UserAuthenticationDTO;
+            var user = _mapper.Map<User>(userAuthentication);
+
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+            return user;
+        }
+    }
+
+
+    public class UpdateUserRequest : IRequest<User>
+    {
+        public int UserId { get; set; }
+        public UserAuthenticationDTO UserAuthenticationDTO { get; set; }
+    }
+
+    public class UpdateUserRequestHandler : IRequestHandler<UpdateUserRequest, User>
+    {
+        private readonly IMapper _mapper;
+        private readonly UserRepository _userRepository;
+
+        public UpdateUserRequestHandler(IMapper mapper, UserRepository userRepository)
+        {
+            _mapper = mapper;
+            _userRepository = userRepository;
+        }
+
+
+        public async Task<User> Handle(UpdateUserRequest request, CancellationToken cancellationToken)
+        {
+            var userId = request.UserId;
+            var userAuthentication = request.UserAuthenticationDTO;
+
+            var userValueContainer = _mapper.Map<User>(userAuthentication);
+            var userToUpdate = await _userRepository.GetAsync(userId);
+
+            _userRepository.SetValues(userToUpdate, userValueContainer);
+            await _userRepository.SaveChangesAsync();
+            return userToUpdate;
+        }
+    }
+
+    public class DeleteUserWithIdRequest : IRequest
+    {
+        public int UserId { get; set; }
+    }
+
+
+    public class DeleteUserWithIdRequestHandler : IRequestHandler<DeleteUserWithIdRequest>
+    {
+        private readonly UserRepository _userRepository;
+
+        public DeleteUserWithIdRequestHandler(UserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
+        public async Task Handle(DeleteUserWithIdRequest request, CancellationToken cancellationToken)
+        {
+            var userId = request.UserId;
+            var userToDelete = await _userRepository.GetAsync(userId);
+
+            _userRepository.Remove(userToDelete);
+            await _userRepository.SaveChangesAsync();
+        }
+    }
+
+
+    public class CustomRegexConstraint : IRouteConstraint
+    {
+        private readonly string _pattern;
+
+        public CustomRegexConstraint(string pattern)
+        {
+            _pattern = pattern;
+        }
+
+        public bool Match(HttpContext httpContext, IRouter route, string routeKey, RouteValueDictionary values, RouteDirection routeDirection)
+        {
+            if (values.TryGetValue(routeKey, out var value) && value != null)
+            {
+                var stringValue = value.ToString();
+                return Regex.IsMatch(stringValue, _pattern);
+            }
+
+            return false;
+        }
+    }
+
+
 
     [ApiController]
     [Route("[controller]")]
     public class UserController : Controller
     {
-        private IMapper _mapper;
-        private RequestPackageFactory _requestPackageFactory;
-        private RequestHandlerChainCollection _requestHandlerChainCollection;
-        //private UserValidater _userValidater;
-        //private UserConverter _userConverter;
-        //private UserRepository _userRepository;
+        private IMediator _mediator;
 
-        public UserController(IMapper mapper, RequestPackageFactory requestPackageFactory, RequestHandlerChainCollection requestHandlerChainCollection/* UserValidater userValidater, UserRepository userRepository, UserConverter userConverter*/)
+        public UserController(IMediator mediator)
         {
-            _mapper = mapper;
-            //_userConverter = userConverter;
-            //_userRepository = userRepository;
-            _requestPackageFactory = requestPackageFactory;
-            _requestHandlerChainCollection = requestHandlerChainCollection;
+            _mediator = mediator;
         }
-
-        private RequestHandlerChain GetRequestHandlerChain(RequestType requestType)
-        {
-            return _requestHandlerChainCollection.GetRequestHandlerChain(requestType);
-        }
-
 
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var requestType = RequestType.GetAll;
-            var requestPackage = _requestPackageFactory.GetRequestPackage(requestType, null);
-            var requestHandlerChain = GetRequestHandlerChain(RequestType.GetWithId);
-            return requestHandlerChain.HandleRequest(requestPackage) as IActionResult;
-
-            //var users = await _userRepository.GetAllAsync();
-            //return Ok(users);
+            var request = new GetAllUsersRequest();
+            var users = await _mediator.Send(request);
+            return Ok(users);
         }
 
-        //[HttpGet("{id:int}", Name = "GetUserWithId")]
-        //public async Task<IActionResult> GetUserWithId(int id)
-        //{
-        //    var user = await _userRepository.GetAsync(id);
+        [HttpGet("{id:int}", Name = "GetUserWithId")]
+        public async Task<IActionResult> GetUserWithId(int id)
+        {
+            var reuqest = new GetUserWithIdRequest()
+            {
+                UserId = id,
+            };
 
-        //    if (user == null)
-        //    {
-        //        return NotFound();
-        //    }
+            var user = await _mediator.Send(reuqest);
+            return Ok(user);
+        }
 
-        //    return Ok(user);
-        //}
+        [HttpGet("{name:alpha}", Name = "GetUserWithName")]
+        public async Task<IActionResult> GetUserWithName(string name)
+        {
+            var request = new GetUserWithNameRequest()
+            {
+                UserName = name,
+            };
 
-        //[HttpGet("{name:regex(.*)}", Name = "GetUserWithName")]
-        //public async Task<IActionResult> GetUserWithName(string name)
-        //{
-        //    var userWithName = await _userRepository.GetUserWithNameAsync(name);
-
-        //    if (userWithName == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return Ok(userWithName);
-        //}
-
+            var user = await _mediator.Send(request);
+            if (user == null) return BadRequest($"No user has the given user name: {name}");
+            return Ok(user);
+        }
 
 
-        //[HttpPost]
-        //public async Task<IActionResult> CreateUser([FromBody] UserAuthenticationDTO userAuthenticationDTO)
-        //{
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] UserAuthenticationDTO userAuthenticationDTO)
+        {
+            var request = new CreateUserRequest()
+            {
+                UserAuthenticationDTO = userAuthenticationDTO,
+            };
 
+            var user = await _mediator.Send(request);
+            var routeValues = new { id = user.UserId };
+            return CreatedAtRoute("GetUserWithId", routeValues, user);
+        }
 
-        //    var userName = userAuthenticationDTO.UserName;
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserAuthenticationDTO userAuthenticationDTO)
+        {
+            var request = new UpdateUserRequest()
+            {
+                UserId = id,
+                UserAuthenticationDTO = userAuthenticationDTO,
+            };
 
-        //    var isUserNameTaken = await _userValidater.IsUserNameTakenAsync(userName);
+            var user = await _mediator.Send(request);
+            return Ok(user);
+        }
 
-        //    if (isUserNameTaken)
-        //    {
-        //        return BadRequest("User name is takne");
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var request = new DeleteUserWithIdRequest()
+            {
+                UserId = id,
+            };
 
+            await _mediator.Send(request);
 
-        //    var user = _mapper.Map<User>(userAuthenticationDTO);
-
-        //    await _userRepository.AddAsync(user);
-        //    await _userRepository.SaveChangesAsync();
-
-        //    var routeValues = new { id = user.UserId };
-        //    return CreatedAtRoute("GetUserWithId", routeValues, user);
-        //}
-
-
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateUser(int id, [FromBody] UserAuthenticationDTO userLogin)
-        //{
-        //    if (userLogin == null)
-        //    {
-        //        return BadRequest("User cannot be null.");
-        //    }
-
-        //    var user = _userConverter.ConvertFromUserAuthentication(userLogin);
-
-        //    var existingUser = await _userRepository.GetAsync(id);
-
-        //    if (existingUser == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    user.UserId = id;
-
-        //    _userRepository.SetValues(existingUser, user);
-        //    await _userRepository.SaveChangesAsync();
-
-        //    return Ok(user);
-        //}
-
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteUser(int id)
-        //{
-        //    var userToDelete = await _userRepository.GetAsync(id);
-
-        //    if (userToDelete == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _userRepository.Remove(userToDelete);
-        //    await _userRepository.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
     }
 }

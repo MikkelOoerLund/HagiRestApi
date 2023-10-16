@@ -12,7 +12,7 @@ using System.Text;
 using Newtonsoft.Json;
 using HagiRestApi;
 using Microsoft.AspNetCore.Mvc;
-
+using System.Reflection;
 
 class Program
 {
@@ -33,6 +33,13 @@ class Program
         });
 
         serviceCollection.AddAutoMapper(typeof(UserProfile));
+
+
+        serviceCollection.AddMediatR(configuration =>
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            configuration.RegisterServicesFromAssembly(assembly);
+        });
 
 
         serviceCollection

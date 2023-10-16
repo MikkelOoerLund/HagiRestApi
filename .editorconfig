@@ -6,6 +6,12 @@ dotnet_diagnostic.CS8618.severity = none
 # CS8603: Possible null reference return.
 dotnet_diagnostic.CS8603.severity = none
 
+# CS8604: Possible null reference argument.
+dotnet_diagnostic.CS8604.severity = none
+
+# CS8767: Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
+dotnet_diagnostic.CS8767.severity = none
+
 [*.{cs,vb}]
 #### Naming styles ####
 
