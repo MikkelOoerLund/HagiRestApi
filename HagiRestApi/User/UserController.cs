@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using FluentValidation;
 using HagiDatabaseDomain;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
@@ -34,6 +36,17 @@ namespace HagiRestApi.Controllers
     public class GetUserWithIdRequest : IRequest<User>
     {
         public int UserId { get; set; }
+    }
+
+
+    public class GetUserWithIdRequestValidator : AbstractValidator<GetUserWithIdRequest>
+    {
+        public GetUserWithIdRequestValidator()
+        {
+            RuleFor(x => x.UserId)
+                .GreaterThan(0)
+                .NotNull();
+        }
     }
 
     public class GetUserWithIdRequestHandler : IRequestHandler<GetUserWithIdRequest, User>
@@ -188,12 +201,43 @@ namespace HagiRestApi.Controllers
     }
 
 
+    //public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    //    where TRequest : IRequest<TResponse>
+    //{
+    //    private readonly IEnumerable<IValidator<TRequest>> _validators;
+
+    //    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
+    //    {
+    //        _validators = validators;
+    //    }
+
+    //    public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    //    {
+    //        //var validationContext = new ValidationContext(request);
+    //        //var failures = _validators
+    //        //    .Select(x => x.Validate(validationContext))
+    //        //    .SelectMany(x => x.Errors)
+    //        //    .Where(x => x != null)
+    //        //    .ToList();
+
+    //        //var hasAnyValidationFailed = failures.Any();
+
+    //        //if (hasAnyValidationFailed)
+    //        //{
+    //        //    throw new valid
+    //        //}
+
+    //        throw new NotImplementedException();
+    //    }
+    //}
+
 
     [ApiController]
     [Route("[controller]")]
     public class UserController : Controller
     {
         private IMediator _mediator;
+
 
         public UserController(IMediator mediator)
         {
@@ -209,14 +253,33 @@ namespace HagiRestApi.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetUserWithId")]
-        public async Task<IActionResult> GetUserWithId(int id)
+        public async Task<IActionResult> GetUserWithId(int id, [FromServices] IValidator<GetUserWithIdRequest> requestValidator)
         {
-            var reuqest = new GetUserWithIdRequest()
+
+            var request = new GetUserWithIdRequest()
             {
                 UserId = id,
             };
 
-            var user = await _mediator.Send(reuqest);
+            var validationResult = requestValidator.Validate(request);
+
+            if (validationResult.IsValid == false)
+            {
+                var modelStateDictionary = new ModelStateDictionary();
+
+                foreach (var error in validationResult.Errors)
+                {
+                    var propertyName = error.PropertyName;
+                    var errorMessage = error.ErrorMessage;
+
+                    modelStateDictionary.AddModelError(propertyName, errorMessage);
+                }
+
+                return ValidationProblem(modelStateDictionary);
+            }
+
+
+            var user = await _mediator.Send(request);
             return Ok(user);
         }
 

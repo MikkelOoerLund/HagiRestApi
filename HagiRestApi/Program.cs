@@ -13,6 +13,10 @@ using Newtonsoft.Json;
 using HagiRestApi;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
+using Microsoft.AspNetCore.Routing.Constraints;
+using System.Text.RegularExpressions;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 class Program
 {
@@ -27,6 +31,8 @@ class Program
         var jsonWebTokenConfiguration = new JsonWebTokenConfiguration();
         configurations.Bind("JsonWebTokenConfiguration", jsonWebTokenConfiguration);
 
+
+
         serviceCollection.Configure<ApiBehaviorOptions>(options =>
         {
             options.SuppressModelStateInvalidFilter = true;
@@ -34,13 +40,18 @@ class Program
 
         serviceCollection.AddAutoMapper(typeof(UserProfile));
 
+        var assembly = Assembly.GetExecutingAssembly();
 
         serviceCollection.AddMediatR(configuration =>
         {
-            var assembly = Assembly.GetExecutingAssembly();
             configuration.RegisterServicesFromAssembly(assembly);
         });
 
+
+        serviceCollection.AddFluentValidationAutoValidation();
+        serviceCollection.AddValidatorsFromAssembly(assembly);
+
+        //serviceCollection.AddScoped<IValidator<GetUserWithIdRequest>, GetUserWithIdRequestValidator>(); 
 
         serviceCollection
             .AddControllers()
@@ -53,10 +64,6 @@ class Program
 
         serviceCollection.AddDbContext<UserContext>();
         serviceCollection.AddTransient<UserRepository>();
-
-        serviceCollection.AddScoped<ValidateUserAuthentication>()
-            .AddScoped<ValidateUserName>();
-
 
         var authenticationScheme = JwtBearerDefaults.AuthenticationScheme;
 
