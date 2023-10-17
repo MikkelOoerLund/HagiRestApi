@@ -45,13 +45,12 @@ class Program
         serviceCollection.AddMediatR(configuration =>
         {
             configuration.RegisterServicesFromAssembly(assembly);
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
 
-        serviceCollection.AddFluentValidationAutoValidation();
         serviceCollection.AddValidatorsFromAssembly(assembly);
 
-        //serviceCollection.AddScoped<IValidator<GetUserWithIdRequest>, GetUserWithIdRequestValidator>(); 
 
         serviceCollection
             .AddControllers()
@@ -93,6 +92,7 @@ class Program
         var app = builder.Build();
 
         app.UseHttpsRedirection();
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseAuthorization();
         app.MapControllers();
         app.UseRouting();

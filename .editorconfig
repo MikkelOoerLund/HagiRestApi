@@ -12,6 +12,12 @@ dotnet_diagnostic.CS8604.severity = none
 # CS8767: Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
 dotnet_diagnostic.CS8767.severity = none
 
+# CS8600: Converting null literal or possible null value to non-nullable type.
+dotnet_diagnostic.CS8600.severity = none
+
+# CS0169: The field 'UserService._userRepository' is never used
+dotnet_diagnostic.CS0169.severity = none
+
 [*.{cs,vb}]
 #### Naming styles ####
 
