@@ -74,13 +74,14 @@ namespace HagiDomain
 
         private async Task<T> DeserializeResponse<T>(HttpResponseMessage httpResponseMessage)
         {
+            var response = await httpResponseMessage.Content.ReadAsStringAsync();
+
             if (httpResponseMessage.IsSuccessStatusCode)
             {
-                var response = await httpResponseMessage.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<T>(response);
             }
 
-            throw new Exception("Failed to deserialize response.");
+            throw new Exception(response);
         }
 
         private StringContent CreateJsonStringObject<T>(T @object)

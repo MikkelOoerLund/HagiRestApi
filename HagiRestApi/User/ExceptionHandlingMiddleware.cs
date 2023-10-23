@@ -37,15 +37,10 @@ namespace HagiRestApi
             {
                 case ValidationException validationException: return CreateProblemDetailsFrom(validationException);
 
-                default: return new ProblemDetails()
-                {
-                    Status = StatusCodes.Status500InternalServerError,
-                    Type = "ServerError",
-                    Title = "Server error",
-                    Detail = "An unexpected error has occured"
-                };
+                default: throw exception;
             }
         }
+
 
         private ProblemDetails CreateProblemDetailsFrom(ValidationException validationException)
         {

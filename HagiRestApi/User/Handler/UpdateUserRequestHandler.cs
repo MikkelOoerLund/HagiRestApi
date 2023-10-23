@@ -20,6 +20,7 @@ namespace HagiRestApi.Controllers
         {
             var userId = request.UserId;
             var userAuthentication = request.UserAuthenticationDTO;
+            userAuthentication.UserId = userId;
 
             var userValueContainer = _mapper.Map<User>(userAuthentication);
             var userToUpdate = await _userRepository.GetAsync(userId);

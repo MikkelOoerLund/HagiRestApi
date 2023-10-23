@@ -1,4 +1,5 @@
-﻿using HagiDatabaseDomain;
+﻿using AutoMapper;
+using HagiDatabaseDomain;
 using HagiRestApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -14,28 +15,30 @@ namespace HagiRestApi.Controllers
     [Route("authentication")]
     public class AuthenticationController : Controller
     {
+        private IMapper _mapper;
+        private UserRepository _userRepository;
         private JsonWebTokenConfiguration _jsonWebTokenConfiguration;
-        private List<UserAuthenticationDTO> _registeredUsers;
 
-        public AuthenticationController(JsonWebTokenConfiguration jsonWebTokenConfiguration)
+        public AuthenticationController(JsonWebTokenConfiguration jsonWebTokenConfiguration, UserRepository userRepository, IMapper mapper)
         {
+            _mapper = mapper;
+            _userRepository = userRepository;
             _jsonWebTokenConfiguration = jsonWebTokenConfiguration;
-            _registeredUsers = new List<UserAuthenticationDTO>();
         }
 
 
-        private IActionResult GetActionResaultFromUserAuthentication(UserAuthenticationDTO userAuthentication)
+        private IActionResult GetActionResaultFromUserAuthentication(UserAuthenticationDTO userAuthenticationDTO)
         {
-            if (userAuthentication == null) return BadRequest("User authentication can not be null.");
-            if (userAuthentication.Salt == null) return BadRequest("Salt can not be null");
-            if (userAuthentication.UserName == null) return BadRequest("User name can not be null");
-            if (userAuthentication.HashPassword == null) return BadRequest("Hash password can not be null");
+            if (userAuthenticationDTO == null) return BadRequest("User authentication can not be null.");
+            if (userAuthenticationDTO.Salt == null) return BadRequest("Salt can not be null");
+            if (userAuthenticationDTO.UserName == null) return BadRequest("User name can not be null");
+            if (userAuthenticationDTO.HashPassword == null) return BadRequest("Hash password can not be null");
 
             return Ok();
         }
 
 
-        private string CreateJsonWebTokenFromUserAuthentication(UserAuthenticationDTO userAuthentication)
+        private string CreateJsonWebTokenFromUser(User user)
         {
             var key = _jsonWebTokenConfiguration.Key;
             var subject = _jsonWebTokenConfiguration.Subject;
@@ -50,8 +53,8 @@ namespace HagiRestApi.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, subject),
                 new Claim(JwtRegisteredClaimNames.Jti, guid.ToString()),
                 new Claim(JwtRegisteredClaimNames.Exp, constructedDateTime.ToString()),
-                new Claim("UserId", userAuthentication.UserId.ToString()),
-                new Claim("UserName", userAuthentication.UserName),
+                new Claim("UserId", user.UserId.ToString()),
+                new Claim("UserName", user.UserName),
             };
 
             var keyBytes = Encoding.UTF8.GetBytes(key);
@@ -72,35 +75,68 @@ namespace HagiRestApi.Controllers
             return token;
         }
 
+        [HttpGet("{name:alpha}")]
+        public async Task<IActionResult> GetSalt(string name)
+        {
+            var user = await _userRepository.GetUserWithNameAsync(name);
+
+            if (user == null)
+            {
+                return BadRequest("Invalid username or password");
+            }
+
+
+            return Ok(user.Salt);
+        }
 
         [HttpPost("register")]
-        public IActionResult Register([FromBody] UserAuthenticationDTO userAuthentication)
+        public async Task<IActionResult> Register([FromBody] UserAuthenticationDTO userAuthenticationDTO)
         {
-            var actionResault = GetActionResaultFromUserAuthentication(userAuthentication);
+            var actionResault = GetActionResaultFromUserAuthentication(userAuthenticationDTO);
 
             if (actionResault is OkResult)
             {
-                var jsonWebToken = CreateJsonWebTokenFromUserAuthentication(userAuthentication);
-                _registeredUsers.Add(userAuthentication);
-                return Ok(jsonWebToken);
+                var user = _mapper.Map<User>(userAuthenticationDTO);
+
+                var existingUser = await _userRepository.GetUserWithNameAsync(user.UserName);
+
+                if (existingUser == null)
+                {
+                    var jsonWebToken = CreateJsonWebTokenFromUser(user);
+
+                    await _userRepository.AddAsync(user);
+                    await _userRepository.SaveChangesAsync();
+                    return Ok(jsonWebToken);
+                }
+
+                return BadRequest("Username is taken");
             }
 
             return actionResault;
         }
 
 
-        [HttpPost("login")]
-        public IActionResult Login(UserAuthenticationDTO userAuthentication)
-        {
-            var user = _registeredUsers.Find(u => u.UserName == userAuthentication.UserName);
 
-            if (user != null && user.HashPassword == userAuthentication.HashPassword)
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(UserAuthenticationDTO userAuthenticationDTO)
+        {
+            var mappedUser = _mapper.Map<User>(userAuthenticationDTO);
+            var user = await _userRepository.GetUserWithNameAsync(mappedUser.UserName);
+
+            if (user == null)
             {
-                var jsonWebToken = CreateJsonWebTokenFromUserAuthentication(user);
-                return Ok(jsonWebToken);
+                return BadRequest("Invalid username or password");
             }
 
-            return Unauthorized("Invalid username or password");
+
+            if (user.HashPassword != mappedUser.HashPassword)
+            {
+                return BadRequest("Invalid username or password");
+            }
+
+            var jsonWebToken = CreateJsonWebTokenFromUser(user);
+            return Ok(jsonWebToken);
         }
 
 
